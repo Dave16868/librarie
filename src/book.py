@@ -2,9 +2,10 @@ from datetime import date, timedelta
 from re import error
 
 class Book:
-    def __init__(self, title, author, tags=None, start_date=None, finish_date=None, read_status="Unread", notes=None):
+    def __init__(self, title, author, library=None, tags=None, start_date=None, finish_date=None, read_status="Unread", notes=None):
         self.title = title
         self.author = author
+        self._library = library
         self.tags = tags
         self.start_date = start_date
         self.finish_date = finish_date
@@ -12,7 +13,7 @@ class Book:
         self.notes = notes
 
     def __repr__(self):
-        return f"{self.title} by {self.author}.\ntags: {self.tags}.\nread status : {self.read_status}.\nstart date : {self.start_date}.\nfinish date : {self.finish_date}."
+        return f"{self.title} by {self.author}.\n library: {self._library}.\ntags: {self.tags}.\nread status : {self.read_status}.\nstart date : {self.start_date}.\nfinish date : {self.finish_date}."
 
     def edit(self, **kwargs):
         changed_attributes = []
@@ -25,6 +26,9 @@ class Book:
         print(f"list of attributes successfully editted: {changed_attributes}")
 
     def edit_title(self, new_title):
+        old_title = self.title
+        buk = self._library.repository.pop(old_title)
+        self._library.repository[new_title] = buk 
         self.title = new_title
         return True
 
@@ -40,6 +44,9 @@ class Book:
             if isinstance(tag, (str, int)):
                 self.tags.append(tag)
                 added_tags.append(tag)
+            else:
+                print(f"'{tag} is not a valid tag ---> strings or integers only")
+                continue
         print(f"added tags: {added_tags} to {self.title}'s tags")
         return added_tags
 
@@ -62,13 +69,16 @@ class Book:
         print("unable to set status, kindly enter a string")
         return False
 
+    def edit_note(self):
+        self.notes = input("write a note: ")
+
     def set_start_date(self, year, month, day):
         self.start_date = date(year, month, day)
 
     def set_finish_date(self, year, month, day):
         self.finish_date = date(year, month, day)
 
-    def calculate_time_owned(self):
+    def calculate_read_time(self):
         date1 = self.start_date
         date2 = self.finish_date
         delta = date2 - date1

@@ -12,7 +12,7 @@ class TestBook(unittest.TestCase):
         book1 = Book("Diary of a Wimpy Kid", "Wimpy Kid")
         book1.set_start_date(2025, 5, 1)
         book1.set_finish_date(2025, 5, 31)
-        self.assertEqual(book1.calculate_time_owned(), 30)
+        self.assertEqual(book1.calculate_read_time(), 30)
 
     def test_add_tags(self):
         book1 = Book("Diary of a Wimpy Kid", "Wimpy Kid")
@@ -24,7 +24,6 @@ class TestBook(unittest.TestCase):
         book2.add_tags("gore", "horror")
         book2.del_tag("gore")
         self.assertEqual(book2.tags, ["horror"])
-
 
 
 if __name__ == "__main__":
