@@ -2,10 +2,16 @@ from datetime import date, timedelta
 from re import error
 
 class Book:
+    all_books = {}
+    _next_id = 0
+
     def __init__(self, title, author, library=None, tags=None, start_date=None, finish_date=None, read_status="Unread", notes=None):
+        self._library = [] if library is None else library
+        self._id = Book._next_id
+        Book._next_id += 1
+        Book.all_books[self._id] = self
         self.title = title
         self.author = author
-        self._library = library
         self.tags = tags
         self.start_date = start_date
         self.finish_date = finish_date
@@ -13,7 +19,10 @@ class Book:
         self.notes = notes
 
     def __repr__(self):
-        return f"{self.title} by {self.author}.\n library: {self._library}.\ntags: {self.tags}.\nread status : {self.read_status}.\nstart date : {self.start_date}.\nfinish date : {self.finish_date}."
+        return f"{self.title} by {self.author}.\n library: {self._library}.\n id: {self._id}\n"
+
+    def delete(self):
+        return Book.all_books.pop(self._id)
 
     def edit(self, **kwargs):
         changed_attributes = []
@@ -26,9 +35,6 @@ class Book:
         print(f"list of attributes successfully editted: {changed_attributes}")
 
     def edit_title(self, new_title):
-        old_title = self.title
-        buk = self._library.repository.pop(old_title)
-        self._library.repository[new_title] = buk 
         self.title = new_title
         return True
 
