@@ -5,10 +5,13 @@ class Book:
     all_books = {}
     _next_id = 0
 
-    def __init__(self, title, author, library=None, tags=None, start_date=None, finish_date=None, read_status="Unread", notes=None):
+    def __init__(self, title, author, library=None, id=None, tags=None, start_date=None, finish_date=None, read_status="Unread", notes=None):
         self._library = [] if library is None else library
-        self._id = Book._next_id
-        Book._next_id += 1
+        if id is None:
+            self._id = Book._next_id
+            Book._next_id += 1
+        else:
+            self._id = id
         Book.all_books[self._id] = self
         self.title = title
         self.author = author
@@ -18,10 +21,15 @@ class Book:
         self.read_status = read_status
         self.notes = notes
 
+    def __str__(self):
+        return f"A BOOK NAMED {self.title}"
+
     def __repr__(self):
         return f"{self.title} by {self.author}.\n library: {self._library}.\n id: {self._id}\n"
 
     def delete(self):
+        for libr in self._library:
+           libr.del_book(self._id)
         return Book.all_books.pop(self._id)
 
     def edit(self, **kwargs):
@@ -75,8 +83,9 @@ class Book:
         print("unable to set status, kindly enter a string")
         return False
 
-    def edit_note(self):
-        self.notes = input("write a note: ")
+    def edit_note(self, note):
+        self.notes = note
+        return True
 
     def set_start_date(self, year, month, day):
         self.start_date = date(year, month, day)

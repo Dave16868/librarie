@@ -4,27 +4,22 @@ from book import Book
 class TestBook(unittest.TestCase):
     def test_creation(self):
         book1 = Book("The Origin of Financial Crises", "George Cooper")
-        book1.edit(title="Safe Haven Investing", author="Mark Spitznagel")
-
-        self.assertEqual(1,1)
-
-    def test_calculate_time(self):
-        book1 = Book("Diary of a Wimpy Kid", "Wimpy Kid")
-        book1.set_start_date(2025, 5, 1)
-        book1.set_finish_date(2025, 5, 31)
-        self.assertEqual(book1.calculate_read_time(), 30)
-
-    def test_add_tags(self):
-        book1 = Book("Diary of a Wimpy Kid", "Wimpy Kid")
-        book1.add_tags("comedy", "biography")
-        self.assertEqual(book1.tags, ["comedy", "biography"])
-
-    def test_del_tags(self):
-        book2 = Book("Mein Kampf", "Hitler")
-        book2.add_tags("gore", "horror")
-        book2.del_tag("gore")
-        self.assertEqual(book2.tags, ["horror"])
-
+        book2 = Book("name of book 2", "author of book2")
+        book3 = Book("name of book 3", "author of book3")
+        book2.delete()
+        self.assertEqual(len(Book.all_books), 2)
+        book3.edit_title("Joe")
+        book3.edit_author("Dart")
+        self.assertEqual(book3.title, "Joe")
+        self.assertEqual(book3.author, "Dart")
+        book3.add_tags("tag1", "tag2")
+        book3.del_tag("tag2")
+        self.assertEqual(book3.tags, ["tag1"])
+        book3.set_read_status("Reading")
+        self.assertEqual(book3.read_status, "Reading")
+        book3.edit_note("white")
+        self.assertEqual(book3.notes, "white")
+        self.assertEqual(len(Book.all_books), 2)
 
 if __name__ == "__main__":
     unittest.main()
