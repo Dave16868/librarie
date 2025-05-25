@@ -12,7 +12,7 @@ class Library():
         return f"A LIBRARY NAMED {self.name}"
 
     def __repr__(self):
-        return f"name: {self.name}\n repository: {self.repository}"
+        return f"{self.name} library"
 
     def add_book(self, book_id):
         if book_id in Book.all_books:

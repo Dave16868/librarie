@@ -1,17 +1,24 @@
-from json_conversion import book_to_dic, lib_to_dic
+from json_conversion import *
 from library import Library
 from book import Book
 import unittest
 
 class TestJson(unittest.TestCase):
     def test_booktodic(self):
-        dicked = book_to_dic()
-        self.assertEqual(True, isinstance(dicked, dict))
+        bookdicked = book_to_dic()
+        self.assertEqual(True, isinstance(bookdicked, dict))
 
     def test_libtodic(self):
-        libbed = lib_to_dic()
-        print(libbed)
-        self.assertEqual(True, isinstance(libbed, dict))
+        libdicked = lib_to_dic()
+        self.assertEqual(True, isinstance(libdicked, dict))
+
+    def test_alltodic(self):
+        jsonformat = all_to_dic()
+        self.assertEqual(True, isinstance(jsonformat, dict))
+
+
+
+
 
 
 if __name__ == "__main__":

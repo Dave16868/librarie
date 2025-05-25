@@ -4,10 +4,13 @@ from library import Library
 def book_to_dic():
     converted_books = {}
     for book_id,book in Book.all_books.items():
+        book_reflibs = [] # get a list of libraries(name) this book belongs to
+        for libr in book._library:
+            book_reflibs.append(libr.name)
         converted_books[book_id] = {
             "title": book.title,
             "author": book.author,
-            "library": book._library,
+            "library": book_reflibs,
             "id": book._id,
             "tags": book.tags,
             "start_date": book.start_date,
@@ -15,7 +18,6 @@ def book_to_dic():
             "read_status": book.read_status,
             "notes": book.notes
         }
-    converted_books["_next_id"] = Book._next_id
     return converted_books
 
 def lib_to_dic():
@@ -35,16 +37,20 @@ def all_to_dic():
     converted_libraries = lib_to_dic()
     return {
         "books": converted_books,
-        "libraries": converted_libraries
+        "libraries": converted_libraries,
+        "book_next_id": Book._next_id
     }
 
-def book_from_dic(converted_books):
+def book_from_dic(converted_books):  # start each book as empty lib cuz later the add_book function will add each book back into its library
     for book_id,book in converted_books.items():
-        Book(book["title"], book["author"], book["library"], book["id"], book["tags"], book["start_date"], book["finish_date"], book["read_status"], book["notes"])
-    Book._next_id = converted_books["_next_id"]
+        Book(book["title"], book["author"], [], book["id"], book["tags"], book["start_date"], book["finish_date"], book["read_status"], book["notes"])
+    return Book.all_books
 
 def lib_from_dic(converted_libraries):
     for lib_name,lib in converted_libraries.items():
-        Library(lib["name"], lib["repository"])
+        new_lib = Library(lib["name"])
+        for book_id in lib["repository"]: # rmb books are loaded before the libraries
+            new_lib.add_book(book_id)
+    return Library.all_libraries
 
 

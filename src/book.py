@@ -25,7 +25,7 @@ class Book:
         return f"A BOOK NAMED {self.title}"
 
     def __repr__(self):
-        return f"{self.title} by {self.author}.\n library: {self._library}.\n id: {self._id}\n"
+        return f"{self.title} by {self.author}.\n"
 
     def delete(self):
         for libr in self._library:
