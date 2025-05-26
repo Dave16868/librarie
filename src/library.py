@@ -10,9 +10,14 @@ class Library():
 
     def __str__(self):
         return f"A LIBRARY NAMED {self.name}"
-
+ 
     def __repr__(self):
         return f"{self.name} library"
+
+    def delete(self):
+        for book_id, book in self.repository.items():
+            self.del_book(book_id)
+        return Library.all_libraries.pop(self.name)
 
     def add_book(self, book_id):
         if book_id in Book.all_books:
