@@ -8,8 +8,6 @@ class Library():
         self.repository = {} if repository is None else repository
         Library.all_libraries[self.name] = self
 
-    def __str__(self):
-        return f"A LIBRARY NAMED {self.name}"
  
     def __repr__(self):
         return f"{self.name} library"
