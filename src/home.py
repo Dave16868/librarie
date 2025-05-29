@@ -1,5 +1,8 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import filedialog
+from json_conversion import *
+import json
 
 class Home():
     def __init__(self):
@@ -18,11 +21,19 @@ class Home():
         prompt.title("Save & Close")
         prompt.attributes("-topmost", 1)
         text = ttk.Label(prompt, text="Do you want to save your library?", padding="3 3 3 3", anchor='center')
-        yes = ttk.Button(prompt, text="Yes")
+        yes = ttk.Button(prompt, text="Yes", command= lambda: self.helper_save())
         no = ttk.Button(prompt, text="No", command= lambda: self._root.destroy())
 
         text.grid(column=0, row=0, columnspan=2, sticky='we')
         yes.grid(column=0, row=1, sticky='nsew')
         no.grid(column=1, row=1, sticky='senw')
+
+    def helper_save(self):
+        filename = filedialog.asksaveasfilename(title="Save Librarie As", defaultextension=".json", filetypes=[("JSON Files", "*.json")])
+        if filename:
+            with open(filename, 'w') as f:
+                json.dump(all_to_dic(), f)
+            self._root.destroy()
+        return
 
 Home()
