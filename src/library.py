@@ -13,7 +13,8 @@ class Library():
         return f"{self.name} library"
 
     def delete(self):
-        for book_id, book in self.repository.items():
+        booklist = list(self.repository.keys())
+        for book_id in booklist:
             self.del_book(book_id)
         return Library.all_libraries.pop(self.name)
 
