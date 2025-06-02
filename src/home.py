@@ -25,6 +25,7 @@ class Home():
         prompt = Toplevel(self._root)
         prompt.title("Save & Close")
         prompt.attributes("-topmost", 1)
+        prompt.resizable(FALSE, FALSE)
         text = ttk.Label(prompt, text="Do you want to save your librarie profile?", padding="3 3 3 3", anchor='center')
         yes = ttk.Button(prompt, text="Yes", command= lambda: self.helper_save())
         no = ttk.Button(prompt, text="No", command= lambda: self._root.destroy())
@@ -87,6 +88,32 @@ class Home():
             librlist.pop(idx)
             librlistvar.set(librlist)
             print(f"deleted library: {librname}")
+
+    def add_libr(self, librlist, librlistvar):
+        namebox = Toplevel(self.frame)
+        namebox.title("Library Creation")
+        namebox.attributes("-topmost", 1)
+        namebox.resizable(FALSE, FALSE)
+        label1 = ttk.Label(namebox, text="Name your library", padding='3 3 3 3', anchor='center')
+        librname = StringVar()
+        entry1 = ttk.Entry(namebox, textvariable=librname, width=10)
+        entry1.focus()
+        namebox.bind('<Return>', lambda: self.create_libr(namebox, librname, librlist, librlistvar))
+
+        label1.grid()
+        entry1.grid()
+        
+    def create_libr(self, window, librname, librlist, librlistvar, ):
+        if librname:
+            Library(librname)
+            librlist.append(librname)
+            librlistvar.set(librlist)
+            print(f"added library: {librname}")
+            window.destroy()
+        else:
+            messagebox.showinfo(message='Please enter a name')
+
+        
 
 
 
