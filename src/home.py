@@ -11,9 +11,9 @@ class Home():
     def __init__(self, root):
         self._root = root
         self._root.title("librarie")
-        width=str(self._root.winfo_screenwidth())
-        height=str(self._root.winfo_screenheight())
-        self._root.geometry(f'{width}x{height}')
+        width = 1280
+        height = 720
+        self._root.geometry(f'{width}x{height}+0+0')
         self._root.minsize(1280, 720)
         self._root.protocol("WM_DELETE_WINDOW", self.quit_save)
         self.start_load()
@@ -46,14 +46,18 @@ class Home():
         filename = filedialog.askopenfilename(title="Open Library", defaultextension=".json", filetypes=[("JSON Files", "*.json")])
         if filename:
             with open(filename, 'r') as f:
-                metadict = json.load(f)
-                print(f"Books found: {list(metadict["books"].keys())}")
-                print(f"Libraries found: {list(metadict["libraries"].keys())}")
-                loaded_books = book_from_dic(metadict["books"])
-                loaded_libs = lib_from_dic(metadict["libraries"])
-                Book._next_id = metadict["book_next_id"]
-                print(f"Books loaded: {list(loaded_books.keys())}")
-                print(f"Libraries loaded: {list(loaded_libs.keys())}")
+                try:
+                    metadict = json.load(f)
+                    print(f"Books found: {list(metadict["books"].keys())}")
+                    print(f"Libraries found: {list(metadict["libraries"].keys())}")
+                    loaded_books = book_from_dic(metadict["books"])
+                    loaded_libs = lib_from_dic(metadict["libraries"])
+                    Book._next_id = metadict["book_next_id"]
+                    print(f"Books loaded: {list(loaded_books.keys())}")
+                    print(f"Libraries loaded: {list(loaded_libs.keys())}")
+                except:
+                    print("Error: invalid JSON file. Try selecting a different file.")
+                    self.start_load()
         else:
             messagebox.showinfo(message="Opening an empty library")
 
@@ -68,7 +72,7 @@ class Home():
         infoframe = ttk.Frame(self.frame, borderwidth=5, relief="ridge", width=400, height=400, padding ='6 6 6 6')
         loadlibr = ttk.Button(self.frame, text="Load Library", padding='6 6 6 6')
         dellibr = ttk.Button(self.frame, text="Delete Library", padding='6 6 6 6', command= lambda: self.del_libr(l, librlist, librlistvar))
-        addlibr = ttk.Button(self.frame, text="Add Library")
+        addlibr = ttk.Button(self.frame, text="Add Library", command= lambda: self.add_libr(librlist, librlistvar))
         l.grid(column=0, row=0, rowspan=6, sticky='snew')
         infoframe.grid(column=1, row=0, columnspan=2, rowspan=4, sticky='nsew')
         addlibr.grid(column=1, row=4, sticky="snew")
@@ -98,12 +102,12 @@ class Home():
         librname = StringVar()
         entry1 = ttk.Entry(namebox, textvariable=librname, width=10)
         entry1.focus()
-        namebox.bind('<Return>', lambda: self.create_libr(namebox, librname, librlist, librlistvar))
+        namebox.bind('<Return>', lambda x: self.create_libr(namebox, entry1.get(), librlist, librlistvar))
 
         label1.grid()
         entry1.grid()
         
-    def create_libr(self, window, librname, librlist, librlistvar, ):
+    def create_libr(self, window, librname, librlist, librlistvar):
         if librname:
             Library(librname)
             librlist.append(librname)
@@ -113,7 +117,13 @@ class Home():
         else:
             messagebox.showinfo(message='Please enter a name')
 
-        
+    def load_libr(self, listbox, librlist):
+        selection = listbox.curselection()
+        if len(selection) == 1:
+            idx = selection[0]
+            librname = librlist[idx]
+            libr_to_load = Library.all_libraries[librname]
+            libr_to_load.load_GUI()
 
 
 

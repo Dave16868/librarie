@@ -11,6 +11,10 @@ class Library():
  
     def __repr__(self):
         return f"{self.name} library"
+    
+    def load_GUI(self):
+
+ 
 
     def delete(self):
         booklist = list(self.repository.keys())
