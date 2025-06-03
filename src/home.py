@@ -70,7 +70,7 @@ class Home():
         librlistvar = StringVar(value=librlist)
         l = Listbox(self.frame, height=10, listvariable=librlistvar)
         infoframe = ttk.Frame(self.frame, borderwidth=5, relief="ridge", width=400, height=400, padding ='6 6 6 6')
-        loadlibr = ttk.Button(self.frame, text="Load Library", padding='6 6 6 6')
+        loadlibr = ttk.Button(self.frame, text="Load Library", padding='6 6 6 6', command= lambda: self.load_libr(l, librlist))
         dellibr = ttk.Button(self.frame, text="Delete Library", padding='6 6 6 6', command= lambda: self.del_libr(l, librlist, librlistvar))
         addlibr = ttk.Button(self.frame, text="Add Library", command= lambda: self.add_libr(librlist, librlistvar))
         l.grid(column=0, row=0, rowspan=6, sticky='snew')
@@ -123,7 +123,9 @@ class Home():
             idx = selection[0]
             librname = librlist[idx]
             libr_to_load = Library.all_libraries[librname]
-            libr_to_load.load_GUI()
+
+            self.frame.destroy()
+            libr_to_load.load_GUI(self._root)
 
 
 
