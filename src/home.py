@@ -66,22 +66,29 @@ class Home():
         self.frame.grid(sticky='snew')
         self._root.rowconfigure(0, weight=1)
         self._root.columnconfigure(0, weight=1)
+
         librlist = list(Library.all_libraries.keys())
         librlistvar = StringVar(value=librlist)
         l = Listbox(self.frame, height=10, listvariable=librlistvar)
+
         infoframe = ttk.Frame(self.frame, borderwidth=5, relief="ridge", width=400, height=400, padding ='6 6 6 6')
         loadlibr = ttk.Button(self.frame, text="Load Library", padding='6 6 6 6', command= lambda: self.load_libr(l, librlist))
         dellibr = ttk.Button(self.frame, text="Delete Library", padding='6 6 6 6', command= lambda: self.del_libr(l, librlist, librlistvar))
         addlibr = ttk.Button(self.frame, text="Add Library", command= lambda: self.add_libr(librlist, librlistvar))
+
         l.grid(column=0, row=0, rowspan=6, sticky='snew')
         infoframe.grid(column=1, row=0, columnspan=2, rowspan=4, sticky='nsew')
         addlibr.grid(column=1, row=4, sticky="snew")
         dellibr.grid(column=2, row=4, sticky="snew")
         loadlibr.grid(column=1, row=5, columnspan=5, sticky='ew')
+
         self.frame.columnconfigure(0, weight=1)
         self.frame.columnconfigure(1, weight=1)
         self.frame.columnconfigure(2, weight=1)
         self.frame.rowconfigure(0, weight=1)
+        
+        l.bind('<Double-1>', lambda x: self.load_libr(l, librlist))
+
 
     def del_libr(self, listbox, librlist, librlistvar):
         selection = listbox.curselection()

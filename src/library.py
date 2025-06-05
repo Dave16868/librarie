@@ -79,17 +79,33 @@ class Library():
         window.attributes('-topmost', 1)
         windowframe = ttk.Frame(window, padding='12 12 12 12')
 
-        tree = ttk.Treeview(windowframe, columns=('Title', 'Author', 'Status'))
+        tree = ttk.Treeview(windowframe, columns=('Author', 'Status', 'Tags'))
+        tree.heading('Author', text='Author')
+        tree.heading('Status', text='Status')
+        tree.heading('Tags', text='Tags')
+        tree.column('Author', anchor='center')
+        tree.column('Status', anchor='center')
+        tree.column('Tags', anchor='center')
         s = ttk.Scrollbar(tree, orient=VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=s.set)
-        for librname in Library.all_libraries:
-            tree.insert('', 'end', librname, text=librname)
+
+        tree.tag_configure('library', background='grey50')
+
+        for librname, libr in Library.all_libraries.items():
+            tree.insert('', 'end', librname, text=f'{librname} ({len(libr.repository.keys())})', tags=('library'))
+            for bookid, book in libr.repository.items():
+                tree.insert(librname, 'end', book.title, text=book.title, values=(book.author, book.read_status, book.tags))
+        all_books = tree.insert('', 'end', text=f"All Books ({len(Book.all_books.keys())})")
+        for buk in Book.all_books.values():
+            tree.insert(all_books, 'end', text=buk.title)
 
         windowframe.grid(row=0, column=0, sticky='nsew')
         window.rowconfigure(0, weight=1)
         window.columnconfigure(0, weight=1)
 
         tree.grid(row=0, column=0, sticky='nsew')
+        windowframe.rowconfigure(0, weight=1)
+        windowframe.columnconfigure(0, weight=1)
 
 
 def GUI_create_book(root):
