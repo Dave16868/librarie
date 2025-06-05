@@ -115,14 +115,16 @@ class Home():
         entry1.grid()
         
     def create_libr(self, window, librname, librlist, librlistvar):
-        if librname:
+        if not librname:
+            messagebox.showinfo(message='Please enter a name', parent=window)
+        elif librname in Library.all_libraries:
+            messagebox.showinfo(message='Library name already in use', parent=window)
+        else:
             Library(librname)
             librlist.append(librname)
             librlistvar.set(librlist)
             print(f"added library: {librname}")
             window.destroy()
-        else:
-            messagebox.showinfo(message='Please enter a name')
 
     def load_libr(self, listbox, librlist):
         selection = listbox.curselection()
