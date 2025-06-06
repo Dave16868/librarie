@@ -63,44 +63,64 @@ class Home():
 
     def load_GUI(self):
         self.frame = ttk.Frame(self._root, padding='12 12 12 12')
-        self.frame.grid(sticky='snew')
+        treeframe =ttk.Frame(self.frame, padding='6 6 6 6', relief='ridge', borderwidth=5)
+        label1 = ttk.Label(self.frame, text='Select a Library to Load', anchor='center')
+
+        treestyle = ttk.Style()
+        treestyle.configure("Treeview", rowheight=40)
+        tree = ttk.Treeview(treeframe, columns=('Library', '# of Books'))
+        tree.heading('Library', text='Library')
+        tree.heading('# of Books', text='# of Books')
+        tree.column('#0', width=50)
+        tree.column('Library', width=400, anchor='center')
+        tree.column('# of Books', width=200, anchor='center')
+
+        s = ttk.Scrollbar(tree, orient=VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=s.set)
+
+        self.treeview_generate(tree)
+
+        loadlibr = ttk.Button(self.frame, text="Load Library", padding='6 6 6 6', command= lambda: self.load_libr(tree))
+        dellibr = ttk.Button(self.frame, text="Delete Library", padding='6 6 6 6', command= lambda: self.del_libr(tree))
+        addlibr = ttk.Button(self.frame, text="Add Library", command= lambda: self.add_libr(tree))
+
+        self.frame.grid(row=0, column=0, sticky='snew')
+        tree.grid(row=0, column=0, sticky='snew')
+        treeframe.grid(column=0, row=1, columnspan=2, sticky='snew')
+        label1.grid(row=0, column=0, columnspan=2, sticky='nsew')
+        addlibr.grid(column=0, row=2, sticky="snew")
+        dellibr.grid(column=1, row=2, sticky="snew")
+        loadlibr.grid(column=0, row=3, columnspan=2, sticky='nsew')
+
         self._root.rowconfigure(0, weight=1)
         self._root.columnconfigure(0, weight=1)
-
-        librlist = list(Library.all_libraries.keys())
-        librlistvar = StringVar(value=librlist)
-        l = Listbox(self.frame, height=10, listvariable=librlistvar)
-
-        infoframe = ttk.Frame(self.frame, borderwidth=5, relief="ridge", width=400, height=400, padding ='6 6 6 6')
-        loadlibr = ttk.Button(self.frame, text="Load Library", padding='6 6 6 6', command= lambda: self.load_libr(l, librlist))
-        dellibr = ttk.Button(self.frame, text="Delete Library", padding='6 6 6 6', command= lambda: self.del_libr(l, librlist, librlistvar))
-        addlibr = ttk.Button(self.frame, text="Add Library", command= lambda: self.add_libr(librlist, librlistvar))
-
-        l.grid(column=0, row=0, rowspan=6, sticky='snew')
-        infoframe.grid(column=1, row=0, columnspan=2, rowspan=4, sticky='nsew')
-        addlibr.grid(column=1, row=4, sticky="snew")
-        dellibr.grid(column=2, row=4, sticky="snew")
-        loadlibr.grid(column=1, row=5, columnspan=5, sticky='ew')
-
-        self.frame.columnconfigure(0, weight=1)
-        self.frame.columnconfigure(1, weight=1)
-        self.frame.columnconfigure(2, weight=1)
-        self.frame.rowconfigure(0, weight=1)
+        self.frame.columnconfigure([0,1], weight=1)
+        self.frame.rowconfigure(1, weight=1)
+        treeframe.rowconfigure(0, weight=1)
+        treeframe.columnconfigure(0, weight=1)
         
-        l.bind('<Double-1>', lambda x: self.load_libr(l, librlist))
+        tree.bind('<Double-1>', lambda x: self.load_libr(tree))
 
 
-    def del_libr(self, listbox, librlist, librlistvar):
-        selection = listbox.curselection()
-        if len(selection) == 1:
-            idx = selection[0]
-            librname = librlist[idx]
-            Library.all_libraries[librname].delete()
-            librlist.pop(idx)
-            librlistvar.set(librlist)
-            print(f"deleted library: {librname}")
+    def del_libr(self, tree):
+        selection = tree.selection()
+        if len(selection) != 1:
+            print("Treeview selection should highlight 1 item.")
+            return
 
-    def add_libr(self, librlist, librlistvar):
+        tree_item = selection[0]
+        tree_item_values = tree.item(tree_item, option='values')
+        librname = tree_item_values[0]
+        
+        if librname not in Library.all_libraries:
+            print("Please select only libraries to delete.")
+            return
+
+        Library.all_libraries[librname].delete()
+        self.load_GUI()
+        print(f"deleted library: {librname}")
+
+    def add_libr(self, tree):
         namebox = Toplevel(self.frame)
         namebox.title("Library Creation")
         namebox.attributes("-topmost", 1)
@@ -109,10 +129,21 @@ class Home():
         librname = StringVar()
         entry1 = ttk.Entry(namebox, textvariable=librname, width=10)
         entry1.focus()
-        namebox.bind('<Return>', lambda x: self.create_libr(namebox, entry1.get(), librlist, librlistvar))
+        namebox.bind('<Return>', lambda x: self._treehelper_create_libr(namebox, entry1.get(), tree))
 
         label1.grid()
         entry1.grid()
+
+    def _treehelper_create_libr(self, window, librname, tree):
+        if not librname:
+            messagebox.showinfo(message='Please enter a name', parent=window)
+        elif librname in Library.all_libraries:
+            messagebox.showinfo(message='Library name already in use', parent=window)
+        else:
+            Library(librname)
+            self.treeview_generate(tree)
+            print(f"added library: {librname}")
+            window.destroy()
         
     def create_libr(self, window, librname, librlist, librlistvar):
         if not librname:
@@ -126,16 +157,33 @@ class Home():
             print(f"added library: {librname}")
             window.destroy()
 
-    def load_libr(self, listbox, librlist):
-        selection = listbox.curselection()
-        if len(selection) == 1:
-            idx = selection[0]
-            librname = librlist[idx]
-            libr_to_load = Library.all_libraries[librname]
+    def load_libr(self, tree):
+        selection = tree.selection()
+        if len(selection) != 1:
+            print("Treeview selection should highlight 1 item.")
+            return
 
-            self.frame.destroy()
-            libr_to_load.load_GUI(self._root)
+        tree_item = selection[0]
+        tree_item_values = tree.item(tree_item, option='values')
+        librname = tree_item_values[0]
 
+        if librname not in Library.all_libraries:
+            print("Please select only libraries to delete.")
 
+        libr_to_load = Library.all_libraries[librname]
+        self.frame.destroy()
+        libr_to_load.load_GUI(self._root)
+        print(f"Loading library: {librname}")
+
+    def treeview_generate(self, tree):
+        for item in tree.get_children(''):
+            tree.delete(item)
+        for i, libr in enumerate(Library.all_libraries.values()):
+            tree.insert('', 'end', text=f'{i+1}.', values=(libr.name, len(libr.repository.keys())))
+
+        tree.tag_configure("greyed", background='grey50')
+        item_ids = tree.get_children()
+        for j in range(0, len(item_ids), 2):
+            tree.item(item_ids[j], tags=("greyed"))
 
 Home(Tk())
