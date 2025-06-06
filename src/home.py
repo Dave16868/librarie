@@ -11,8 +11,8 @@ class Home():
     def __init__(self, root):
         self._root = root
         self._root.title("librarie")
-        width = 1280
-        height = 720
+        width = 1920
+        height = 1080
         self._root.geometry(f'{width}x{height}+0+0')
         self._root.minsize(1280, 720)
         self._root.protocol("WM_DELETE_WINDOW", self.quit_save)
@@ -59,7 +59,7 @@ class Home():
                     print("Error: invalid JSON file. Try selecting a different file.")
                     self.start_load()
         else:
-            messagebox.showinfo(message="Opening an empty library")
+            messagebox.showinfo(message="No libraries found.")
 
     def load_GUI(self):
         self.frame = ttk.Frame(self._root, padding='12 12 12 12')

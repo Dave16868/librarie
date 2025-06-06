@@ -63,13 +63,15 @@ class Library():
         self.create_menubar()
         booknamesvar = StringVar(value=self.booknames())
         lbox = Listbox(self.frame, height=10, listvariable=booknamesvar)
+        currlibr = ttk.Label(self.frame, text=f'Current Library: {self.name}', anchor='center', padding='0 0 0 12')
         
         self.frame.grid(row=0, column=0, sticky='nsew')
-        lbox.grid(column=0, row=0, sticky='nsew')
+        currlibr.grid(column=0, row=0, sticky='nwes')
+        lbox.grid(column=0, row=1, sticky='nsew')
     
         self._root.rowconfigure(0 , weight=1)
         self._root.columnconfigure(0, weight=1)
-        self.frame.rowconfigure(0, weight=1)
+        self.frame.rowconfigure(1, weight=1)
         self.frame.columnconfigure(0, weight=1)
 
     def create_menubar(self):
@@ -77,14 +79,15 @@ class Library():
             self._root.option_add('*tearOff', FALSE)
             menubar = Menu(self.frame)
             self._root['menu'] = menubar
-            new = Menu(menubar)
-            edit = Menu(menubar)
-            switch = Menu(menubar)
-            menubar.add_cascade(menu=new, label='New')
-            menubar.add_cascade(menu=edit, label='Edit')
-            menubar.add_cascade(menu=switch, label='Switch')
-            new.add_command(label='Create Book', command = lambda: GUI_create_book(self._root))
-            edit.add_command(label='Manage Books and Libraries', command = lambda: self.GUI_manage())
+            books = Menu(menubar)
+            manage = Menu(menubar)
+            switch = Menu(manage)
+            menubar.add_cascade(menu=books, label='Books')
+            menubar.add_cascade(menu=manage, label='Manage')
+            manage.add_cascade(menu=switch, label='Switch Libraries')
+            books.add_command(label='New Book', command = lambda: self.GUI_create_book())
+            books.add_command(label='Edit or Delete Book')
+            manage.add_command(label='Manage Books and Libraries', command = lambda: self.GUI_manage())
             for librname in Library.all_libraries:
                 switch.add_command(label=f'{librname}', command = lambda name=librname: self.switch_libr(name))
 
@@ -111,9 +114,9 @@ class Library():
         self._generate_tree(tree)
 
         addlib = ttk.Button(windowframe, text='Add library', padding='6 6 6 6', command = lambda: self.tree_add_libr(tree))
-        dellib = ttk.Button(windowframe, text='Delete Library', padding='6 6 6 6', command = lambda: self.tree_del_libr(tree))
+        dellib = ttk.Button(windowframe, text='Delete Library', padding='6 6 6 6', command = lambda: self.tree_del_libr(tree, windowframe))
         addbook = ttk.Button(windowframe, text='Add Book To ...', padding='6 6 6 6', command= lambda: self.tree_add_book(tree, window))
-        delbook = ttk.Button(windowframe, text='Delete Book', padding='6 6 6 6')
+        rembook = ttk.Button(windowframe, text='Remove Book From...', padding='6 6 6 6', command = lambda: self.tree_remove_book(tree, window))
 
         windowframe.grid(row=0, column=0, sticky='nsew')
         window.rowconfigure(0, weight=1)
@@ -123,6 +126,7 @@ class Library():
         addlib.grid(row=2, column=0, sticky='nsew')
         dellib.grid(row=2, column=1, sticky='nsew')
         addbook.grid(row=2, column=2, sticky='nsew')
+        rembook.grid(row=2, column=3, sticky='nsew')
         windowframe.rowconfigure(0, weight=1)
         windowframe.columnconfigure([0,1,2,3], weight=1)
 
@@ -158,18 +162,29 @@ class Library():
             print(f"added library: {librname}")
             window.destroy()
 
-    def tree_del_libr(self, tree):
+    def tree_del_libr(self, tree, windowframe):
         selection = tree.selection()
-        tree_item = selection[0]
-        print(f"tis is tree_item_name: {tree_item}")
         if len(selection) != 1:
             print("Treeview selection should highlight 1 item.")
-        elif tree_item not in Library.all_libraries:
+        elif selection[0] not in Library.all_libraries:
             print("Please select only libraries to delete.")
         else:
-            Library.all_libraries[tree_item].delete()
-            self._generate_tree(tree)
-            print(f"deleted library: {tree_item}")
+            tree_item = selection[0]
+            if len(Library.all_libraries) > 1:
+                Library.all_libraries[tree_item].delete()
+                if self in Library.all_libraries.values():
+                    self.load_GUI(self._root)
+                    self._generate_tree(tree)
+                    print(f"deleted library: {tree_item}")
+                else:
+                    librname = list(Library.all_libraries.keys())[0]
+                    libr = Library.all_libraries[librname]
+                    libr.load_GUI(self._root)
+                    libr._generate_tree(tree)
+                    print(f"deleted library: {tree_item}")
+            else:
+                print("Unable to delete: Last library remaining.")
+                messagebox.showinfo(message="Unable to delete: Last library remaining.", parent=windowframe)
 
     def tree_add_book(self, tree, window):
         selection = tree.selection()
@@ -186,7 +201,7 @@ class Library():
             addlocation.attributes("-topmost", 1)
             addlocation.resizable(FALSE, FALSE)
             label1 = ttk.Label(addlocation, text="Choose a library to add your book.", padding='3 3 3 3', anchor='center')
-            frame1 = ttk.Frame(addlocation, relief='raised', borderwidth=5, padding='18 18 18 18')
+            frame1 = ttk.Frame(addlocation, relief='sunken', borderwidth=5, padding='18 18 18 18')
             label1.grid(column=0, row=0, columnspan=2, sticky='nws')
             frame1.grid(column=0, row=1, columnspan=2, sticky='nsew')
             
@@ -202,13 +217,47 @@ class Library():
                 librtoggle.grid(column=0, row=2+i, columnspan=2, sticky='nsew')
                 i += 1
             
-            savebutton = ttk.Button(addlocation, text="Save", padding='3 3 3 3', command = lambda: self.tree_save_book(addlocation, tree, frame1, tree_item_name))
-            cancelbutton = ttk.Button(addlocation, text="Cancel", padding='3 3 3 3')
+            savebutton = ttk.Button(addlocation, text="Save", padding='3 3 3 3', command = lambda: self.tree_save_book(tree, tree_item_name, addlocation, frame1))
+            cancelbutton = ttk.Button(addlocation, text="Cancel", padding='3 3 3 3', command = addlocation.destroy)
 
             savebutton.grid(column=0, row=i, sticky='wnes')
             cancelbutton.grid(column=1, row=i, sticky='wnes')
 
-    def tree_save_book(self, window, tree, frame, tree_item_name):
+    def tree_remove_book(self, tree, window):
+        selection = tree.selection()
+
+        if len(selection) != 1:
+            print("Treeview selection should highlight 1 item.")
+            return
+
+        if selection is None:
+            print("Select a book in order to delete it.")
+            messagebox.showinfo(message="Select a book in order to delete it.", parent=window)
+            return
+
+        tree_item = selection[0]
+        tree_item_name = tree.item(tree_item, option='text')
+        
+        if tree_item_name not in self.booknames_all():
+            print("Select a book in order to delete it.")
+            messagebox.showinfo(message="Select a book in order to delete it.", parent=window)
+            return
+
+        parent = tree.parent(tree_item)
+
+        if parent not in Library.all_libraries or parent == "all_books":
+            print("Select a book under a library to remove it from that library.")
+            messagebox.showinfo(message="Select a book under a library to remove it from that library.", parent=window)
+            return
+
+        bookid = self.find_bookid(tree_item_name)
+        parentlibr = Library.all_libraries[parent]
+        parentlibr.del_book(bookid)
+        self._generate_tree(tree)
+        self.load_GUI(self._root)
+        print(f"Removed {tree_item_name} from {parent}")
+
+    def tree_save_book(self, tree, tree_item_name, window, frame):
         for i, child in enumerate(frame.winfo_children()):
             librname = child['text']
             libr = Library.all_libraries[librname]
@@ -230,99 +279,109 @@ class Library():
         for item in tree.get_children(''):
             tree.delete(item)
         for librname, libr in Library.all_libraries.items():
-            tree.insert('', 'end', librname, text=f'{librname} ({len(libr.repository.keys())})', tags=('library'))
+            tree.insert('', 'end', librname, text=f'{librname} ({len(libr.repository.keys())})', tags=('library'), open=TRUE)
             for bookid, book in libr.repository.items():
                 tree.insert(librname, 'end', text=book.title, values=(book.author, book.read_status, book.tags))
-        all_books = tree.insert('', 'end', text=f"All Books ({len(Book.all_books.keys())})")
+        all_books = tree.insert('', 'end', 'all_books', text=f"All Books ({len(Book.all_books.keys())})")
         for buk in Book.all_books.values():
             tree.insert(all_books, 'end', text=buk.title, values=(buk.author, buk.read_status, buk.tags))
 
 
-def GUI_create_book(root):
-    window = Toplevel(root)
-    window.title('Book Creation')
-    window.attributes('-topmost', 1)
-    window.resizable(FALSE, FALSE)
-    windowframe = ttk.Frame(window, padding='12 12 12 12')
+    def GUI_create_book(self):
+        window = Toplevel(self._root)
+        window.title('Book Creation')
+        window.attributes('-topmost', 1)
+        window.resizable(FALSE, FALSE)
+        windowframe = ttk.Frame(window, padding='12 12 12 12')
 
-    titlevar = StringVar()
-    authorvar = StringVar()
-    tagsvar = StringVar()
-    statusvar = StringVar()
-    tagslist = []
-    instruction_font = font.Font(size=7, slant='italic')
+        titlevar = StringVar()
+        authorvar = StringVar()
+        tagsvar = StringVar()
+        statusvar = StringVar()
+        tagslist = []
+        instruction_font = font.Font(size=7, slant='italic')
 
-    title_label = ttk.Label(windowframe, text='Title of Book', padding='3 3 3 3', anchor='w')
-    title_entry = ttk.Entry(windowframe, textvariable=titlevar, width=20)
+        title_label = ttk.Label(windowframe, text='Title of Book', padding='3 3 3 3', anchor='w')
+        title_entry = ttk.Entry(windowframe, textvariable=titlevar, width=20)
 
-    author_label = ttk.Label(windowframe, text='Author of Book', padding = '3 3 3 3', anchor='w')
-    author_entry = ttk.Entry(windowframe, textvariable=authorvar, width=20)
+        author_label = ttk.Label(windowframe, text='Author of Book', padding = '3 3 3 3', anchor='w')
+        author_entry = ttk.Entry(windowframe, textvariable=authorvar, width=20)
 
-    tags_label = ttk.Label(windowframe, text='Tags', padding='3 3 3 3', anchor='w')
-    tags_entry = ttk.Entry(windowframe, textvariable=tagsvar, width=10)
-    tags_frame = ttk.Frame(windowframe, relief='sunken', borderwidth=5, padding='12 12 12 12', width=300, height=300)
-    tags_entry.bind('<Return>', lambda x: _create_tag(tagsvar.get(), tagslist, tags_frame, tags_entry))
-    tags_label_2 = ttk.Label(windowframe, text='Type in a tag and press Enter to add it. Click on the added tags to delete them.', anchor='nw', font=instruction_font, wraplength=500)
+        tags_label = ttk.Label(windowframe, text='Tags', padding='3 3 3 3', anchor='w')
+        tags_entry = ttk.Entry(windowframe, textvariable=tagsvar, width=10)
+        tags_frame = ttk.Frame(windowframe, relief='sunken', borderwidth=5, padding='12 12 12 12', width=300, height=300)
+        tags_entry.bind('<Return>', lambda x: self._create_tag(tagsvar.get(), tagslist, tags_frame, tags_entry))
+        tags_label_2 = ttk.Label(windowframe, text='Type in a tag and press Enter to add it. Click on the added tags to delete them.', anchor='nw', font=instruction_font, wraplength=500)
 
-    read_status_label = ttk.Label(windowframe, text='Read Status', padding='3 3 3 3', anchor='w')
-    read_status = ttk.Combobox(windowframe, textvariable=statusvar, values=('Unread', 'Reading', 'Finished'), state="readonly")
-    read_status.bind("<<ComboboxSelected>>", read_status.selection_clear())
+        read_status_label = ttk.Label(windowframe, text='Read Status', padding='3 3 3 3', anchor='w')
+        read_status = ttk.Combobox(windowframe, textvariable=statusvar, values=('Unread', 'Reading', 'Finished'), state="readonly")
+        read_status.bind("<<ComboboxSelected>>", read_status.selection_clear())
 
-    notes_label = ttk.Label(windowframe, text='Leave a note', padding='3 3 3 3', anchor='w') 
-    notes_box = Text(windowframe, width=20, height=5, wrap='word') # get with .get('start', 'end')
-    s = ttk.Scrollbar(windowframe, orient=VERTICAL, command=notes_box.yview)
-    notes_box.configure(yscrollcommand=s.set)
+        notes_label = ttk.Label(windowframe, text='Leave a note', padding='3 3 3 3', anchor='w') 
+        notes_box = Text(windowframe, width=20, height=5, wrap='word') # get with .get('start', 'end')
+        s = ttk.Scrollbar(windowframe, orient=VERTICAL, command=notes_box.yview)
+        notes_box.configure(yscrollcommand=s.set)
 
-    savebutton = ttk.Button(windowframe, text='Save', command = lambda: _save(window, titlevar.get(), authorvar.get(), tagslist, statusvar.get(), notes_box.get(1.0, 'end')))
-    cancelbutton = ttk.Button(windowframe, text='Cancel', command = lambda: windowframe.destroy())
+        savebutton = ttk.Button(windowframe, text='Save', command = lambda: self._save(window, titlevar.get(), authorvar.get(), tagslist, statusvar.get(), notes_box.get(1.0, 'end')))
+        cancelbutton = ttk.Button(windowframe, text='Cancel', command = lambda: windowframe.destroy())
 
-    windowframe.grid(column=0, row=0, sticky='nsew')
-    window.columnconfigure(0, weight=1)
-    window.rowconfigure(0, weight=1)
+        windowframe.grid(column=0, row=0, sticky='nsew')
+        window.columnconfigure(0, weight=1)
+        window.rowconfigure(0, weight=1)
 
-    title_label.grid(column=0, row=0, columnspan=2, sticky='w')
-    title_entry.grid(column=0, row=1, columnspan=2, sticky='nsew')
-    author_label.grid(column=0, row=2, columnspan=2, sticky='w')
-    author_entry.grid(column=0, row=3, columnspan=2, sticky='nsew')
-    tags_label.grid(column=0, row=4, columnspan=2, sticky='w')
-    tags_entry.grid(column=0, row=5, columnspan=2, sticky='nsew')
-    tags_frame.grid(column=0, row=6, columnspan=2, sticky='nsew')
-    tags_label_2.grid(column=0, row=7, columnspan=2, sticky='nw')
-    read_status_label.grid(column=0, row=8, columnspan=2, sticky='w')
-    read_status.grid(column=0, row=9, columnspan=2, sticky='nsew')
-    notes_label.grid(column=0, row=10, columnspan=2, sticky='w')
-    notes_box.grid(column=0, row=11, columnspan=2, sticky='nsew')
-    s.grid(column=2, row=11, sticky='ns')
-    savebutton.grid(column=0, row=12, sticky='nsew')
-    cancelbutton.grid(column=1, row=12, sticky='nsew')
+        title_label.grid(column=0, row=0, columnspan=2, sticky='w')
+        title_entry.grid(column=0, row=1, columnspan=2, sticky='nsew')
+        author_label.grid(column=0, row=2, columnspan=2, sticky='w')
+        author_entry.grid(column=0, row=3, columnspan=2, sticky='nsew')
+        tags_label.grid(column=0, row=4, columnspan=2, sticky='w')
+        tags_entry.grid(column=0, row=5, columnspan=2, sticky='nsew')
+        tags_frame.grid(column=0, row=6, columnspan=2, sticky='nsew')
+        tags_label_2.grid(column=0, row=7, columnspan=2, sticky='nw')
+        read_status_label.grid(column=0, row=8, columnspan=2, sticky='w')
+        read_status.grid(column=0, row=9, columnspan=2, sticky='nsew')
+        notes_label.grid(column=0, row=10, columnspan=2, sticky='w')
+        notes_box.grid(column=0, row=11, columnspan=2, sticky='nsew')
+        s.grid(column=2, row=11, sticky='ns')
+        savebutton.grid(column=0, row=12, sticky='nsew')
+        cancelbutton.grid(column=1, row=12, sticky='nsew')
 
-    title_entry.focus()
+        title_entry.focus()
 
-def _save(window, title, author, tags, status, notes):
-    if not title or not author:
-        messagebox.showinfo(message='Please enter title and author.')
-        return
-    Book(title, author, tags=tags, read_status=status, notes=notes)
-    window.destroy()
-    messagebox.showinfo(message='Book saved.')
-
-def _create_tag(tagname, tagslist, tags_frame, tags_entry):
-    if tagname:
-        tagslist.append(tagname)
-        tag_button = ttk.Button(tags_frame, text=tagname, padding='6 6 6 6', command = lambda: _annihilate_button(tagname, tagslist, tags_frame, tag_button))
-        tag_button.grid(row=int((len(tagslist)-1) / 3), column=(len(tagslist) + 2) % 3, sticky='snew')
-        tags_entry.delete(0, 'end')
-    else:
-        pass
+    def GUI_delete_book(self):
+        window = Toplevel(self._root)
+        window.title('Book Deletion')
+        window.attributes('-topmost', 1)
+        window.resizable(FALSE, FALSE)
+        windowframe = ttk.Frame(window, padding='12 12 12 12')
 
 
-def _annihilate_button(tagname, tagslist, tags_frame, tag_button):
-    tagslist.remove(tagname)
-    tag_button.destroy()
-    for child in tags_frame.winfo_children():
-        child.destroy()
-    for i in range(len(tagslist)):
-        new_button = ttk.Button(tags_frame, text=tagslist[i], padding='6 6 6 6', command = lambda: _annihilate_button(tagslist[i], tagslist, tags_frame, tag_button))
-        new_button.grid(row=int(i / 3), column=((i + 3) % 3), sticky='snew')
+    def _save(self, window, title, author, tags, status, notes):
+        if not title or not author:
+            messagebox.showinfo(message='Please enter title and author.')
+            return
+        Book(title, author, tags=tags, read_status=status, notes=notes)
+        window.destroy()
+        messagebox.showinfo(message='Book saved.')
+        self.load_GUI(self._root)
+        
+
+    def _create_tag(self, tagname, tagslist, tags_frame, tags_entry):
+        if tagname:
+            tagslist.append(tagname)
+            tag_button = ttk.Button(tags_frame, text=tagname, padding='6 6 6 6', command = lambda: self._annihilate_button(tagname, tagslist, tags_frame, tag_button))
+            tag_button.grid(row=int((len(tagslist)-1) / 3), column=(len(tagslist) + 2) % 3, sticky='snew')
+            tags_entry.delete(0, 'end')
+        else:
+            pass
+
+
+    def _annihilate_button(self, tagname, tagslist, tags_frame, tag_button):
+        tagslist.remove(tagname)
+        tag_button.destroy()
+        for child in tags_frame.winfo_children():
+            child.destroy()
+        for i in range(len(tagslist)):
+            new_button = ttk.Button(tags_frame, text=tagslist[i], padding='6 6 6 6', command = lambda: self._annihilate_button(tagslist[i], tagslist, tags_frame, tag_button))
+            new_button.grid(row=int(i / 3), column=((i + 3) % 3), sticky='snew')
 
 
