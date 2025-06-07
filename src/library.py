@@ -32,6 +32,12 @@ class Library():
             print("Book name not found int list of names.")
             return False
 
+    def rename(self, newname):
+        oldname = self.name
+        self.name = newname
+        Library.all_libraries.pop(oldname)
+        Library.all_libraries[newname] = self
+
     def delete(self):
         booklist = list(self.repository.keys())
         for book_id in booklist:
@@ -58,21 +64,198 @@ class Library():
 
 
     def load_GUI(self, root):
+        self._home_selection = {}
+
         self._root = root
         self.frame = ttk.Frame(self._root, padding='12 12 12 12')
         self.create_menubar()
-        booknamesvar = StringVar(value=self.booknames())
-        lbox = Listbox(self.frame, height=10, listvariable=booknamesvar)
-        currlibr = ttk.Label(self.frame, text=f'Current Library: {self.name}', anchor='center', padding='0 0 0 12')
+        topstat1 = ttk.Label(self.frame, text=f'Current Library: {self.name}', anchor='w', padding='12 12 12 12')
+        topstat2 = ttk.Label(self.frame, text=f"# of Books Loaded: {len(self.repository.keys())}", anchor='e', padding='12 12 12 12')
         
-        self.frame.grid(row=0, column=0, sticky='nsew')
-        currlibr.grid(column=0, row=0, sticky='nwes')
-        lbox.grid(column=0, row=1, sticky='nsew')
+        # Creating left tree frame, top right stats pane, bottom right notes tab and updates
+        titlefont = font.Font(size=20, weight='bold')
+
+        title_label = ttk.Label(self.frame, text="Dashboard", font=titlefont, padding='6 6 6 6', anchor='w')
+        treeframe = ttk.Frame(self.frame, padding='12 12 12 12', relief='ridge', borderwidth=5)
+
+        treepanes_group = ttk.PanedWindow(treeframe, orient=VERTICAL)
+        treepane_1 = ttk.Labelframe(treepanes_group, text='Currently Reading', padding='3 3 3 3')
+        treepane_2 = ttk.Labelframe(treepanes_group, text='Backlog (Unread Books)', padding='3 3 3 3')
+        treepane_3 = ttk.Labelframe(treepanes_group, text='Finished Reading', padding='3 3 3 3')
+        treepanes_group.add(treepane_1, weight=1)
+        treepanes_group.add(treepane_2, weight=1)
+        treepanes_group.add(treepane_3, weight=1)
+
+        stats_pane = ttk.Labelframe(self.frame, text='Book Info:', padding='12 12 12 12')
+
+        tabs_group = ttk.Notebook(self.frame)
+        notes_frame = ttk.Frame(tabs_group, padding='6 6 6 6', borderwidth=5, relief='groove')
+        updates_frame = ttk.Frame(tabs_group, padding='6 6 6 6', borderwidth=5, relief='groove')
+        tabs_group.add(notes_frame, text='Notes')
+        tabs_group.add(updates_frame, text='Coming soon...')
+
+        # creating treeviews:
+        treestyle = ttk.Style()
+        treestyle.configure("Treeview", rowheight=40)
+
+        tree1 = ttk.Treeview(treepane_1, columns=('Title', 'Author'))
+        tree1.heading('#0', text='#')
+        tree1.heading('Title', text='Title')
+        tree1.heading('Author', text='Author')
+        tree1.column('#0', width=50)
+        tree1.column('Title', anchor='center', width=400)
+        tree1.column('Author', anchor='center', width=300)
+        s1 = ttk.Scrollbar(tree1, orient=VERTICAL, command=tree1.yview)
+        tree1.configure(yscrollcommand=s1.set)
+
+        tree2= ttk.Treeview(treepane_2, columns=('Title', 'Author'))
+        tree2.heading('#0', text='#')
+        tree2.heading('Title', text='Title')
+        tree2.heading('Author', text='Author')
+        tree2.column('#0', width=50)
+        tree2.column('Title', anchor='center', width=400)
+        tree2.column('Author', anchor='center', width=300)
+        s2 = ttk.Scrollbar(tree2, orient=VERTICAL, command=tree2.yview)
+        tree2.configure(yscrollcommand=s2.set)
+
+        tree3= ttk.Treeview(treepane_3, columns=('Title', 'Author'))
+        tree3.heading('#0', text='#')
+        tree3.heading('Title', text='Title')
+        tree3.heading('Author', text='Author')
+        tree3.column('#0', width=50)
+        tree3.column('Title', anchor='center', width=400)
+        tree3.column('Author', anchor='center', width=300)
+        s3 = ttk.Scrollbar(tree3, orient=VERTICAL, command=tree3.yview)
+        tree3.configure(yscrollcommand=s3.set)
+
+        # global selection
+        tree1.bind('<<TreeviewSelect>>', lambda x: self._tree_select(x, [tree2, tree3]))
+        tree2.bind('<<TreeviewSelect>>', lambda x: self._tree_select(x, [tree1, tree3]))
+        tree3.bind('<<TreeviewSelect>>', lambda x: self._tree_select(x, [tree1, tree2]))
     
+        # tree generation
+        self._generate_reading_tree(tree1)
+        self._generate_unread_tree(tree2)
+        self._generate_finished_tree(tree3)
+
+        # book infos
+        stats_label = ttk.Label(stats_pane, text=f'Tags: {self._get_selected_book().tags if self._get_selected_book() is not False else "None"}\nStatus: {self._get_selected_book().read_status if self._get_selected_book() is not False else "None"}', padding='3 3 3 3', anchor='nw', wraplength=300)
+
+        #notes tab
+        notes_box = Text(notes_frame, width=20, height=5, wrap='word') # get with .get('start', 'end')
+        if self._get_selected_book() is not False:
+            notes_box.insert(1.0, self._get_selected_book().notes)
+
+        #updates tab
+        updates_label = ttk.Label(updates_frame, text=f"Features I'm considering:\nOpen Library API Integration\nSearch function\nPDF storage (for books in pdf form)\nOther fun stuff that I'm too exhausted to add now :)", wraplength=300, padding='6 6 6 6', anchor='nw')
+
+        #separator
+        separator1 = ttk.Separator(self.frame, orient=VERTICAL)
+        separator2 = ttk.Separator(self.frame, orient=HORIZONTAL)
+
+        #hi
+        tinyfont = font.Font(size=7, slant='roman', family='Courier')
+        tinylabel = ttk.Label(self.frame, padding='3 3 3 3', anchor='se', text='a librarie by Dave', font=tinyfont)
+
         self._root.rowconfigure(0 , weight=1)
         self._root.columnconfigure(0, weight=1)
-        self.frame.rowconfigure(1, weight=1)
-        self.frame.columnconfigure(0, weight=1)
+
+        self.frame.grid(row=0, column=0, sticky='nsew')
+        topstat1.grid(column=0, row=0, columnspan=5, sticky='nwes')
+        topstat2.grid(column=7, row=0, columnspan=5, sticky='snew')
+        title_label.grid(column=0, row=1, columnspan=5, sticky='snew')
+        separator1.grid(column=5, row=2, rowspan=8, sticky='snew')
+        separator2.grid(column=6, row=5, columnspan=4, sticky='snew')
+        treeframe.grid(column=0, row=2, columnspan=5, rowspan=6, sticky='snew')
+        treepanes_group.grid(column=0, row=0, sticky='snew')
+        treeframe.rowconfigure(0, weight=1)
+        treeframe.columnconfigure(0, weight=1)
+        tree1.grid(row=0, column=0, sticky='snew')
+        tree2.grid(row=0, column=0, sticky='snew')
+        tree3.grid(row=0, column=0, sticky='snew')
+        stats_pane.grid(column=6, row=2, columnspan=4, rowspan=3, sticky='snew')
+        stats_label.grid(column=0, row=0, sticky='snew')
+        stats_pane.rowconfigure(0, weight=1)
+        stats_pane.columnconfigure(0, weight=1)
+        tabs_group.grid(row=6, column=6, rowspan=4, columnspan=4, sticky='snew')
+        notes_box.grid(row=0, column=0, sticky='snew')
+        notes_frame.rowconfigure(0, weight=1)
+        notes_frame.columnconfigure(0, weight=1)
+        updates_label.grid(row=0, column=0, sticky='snew')
+        updates_frame.rowconfigure(0, weight=1)
+        updates_frame.columnconfigure(0, weight=1)
+        tinylabel.grid(column=0, row=10, columnspan=10, sticky='snew')
+
+        self.frame.rowconfigure([2,3,4,5,6,7,8,9], weight=1)
+        self.frame.columnconfigure([0,1,2,3,4,5], weight=1)
+
+    def _tree_select(self, event, other_trees):
+        self._home_selection = {}
+        current_tree = event.widget
+        for tree in other_trees:
+            tree.selection_remove(tree.selection())
+        selected = current_tree.selection()
+        if selected:
+            self._home_selection['tree'] = current_tree
+            self._home_selection['item'] = selected[0]
+            self.load_GUI(self._root)
+        else:
+            self._home_selection.clear()
+
+    def _get_selected_book(self):
+        if self._home_selection != {}:
+            print(f"this is home selection: {self._home_selection}")
+            selected_tree = self._home_selection['tree']
+            tree_item = self._home_selection['item']
+            tree_item_values = selected_tree.item(tree_item, option='values')
+            tree_item_name = tree_item_values[0]
+            selected_book = Book.all_books[tree_item_name]
+            return selected_book
+        else:
+            return False
+
+    def _generate_reading_tree(self, tree):
+        for item in tree.get_children(''):
+            tree.delete(item)
+        readinglist = []
+        for buk in Book.all_books.values():
+            if buk.read_status == "Reading":
+                readinglist.append(buk)
+        for i, buk in enumerate(readinglist):
+            tree.insert('', 'end', text=f'{i+1}.', values=(buk.title, buk.author))
+        tree.tag_configure("greyed", background='grey50')
+        item_ids = tree.get_children()
+        for j in range(0, len(item_ids), 2):
+            tree.item(item_ids[j], tags=("greyed"))
+
+    def _generate_unread_tree(self, tree):
+        for item in tree.get_children(''):
+            tree.delete(item)
+        unreadlist = []
+        for buk in Book.all_books.values():
+            if buk.read_status == "Unread":
+                unreadlist.append(buk)
+        for i, buk in enumerate(unreadlist):
+            tree.insert('', 'end', text=f'{i+1}.', values=(buk.title, buk.author))
+        tree.tag_configure("greyed", background='grey50')
+        item_ids = tree.get_children()
+        for j in range(0, len(item_ids), 2):
+            tree.item(item_ids[j], tags=("greyed"))
+
+    def _generate_finished_tree(self, tree):
+        for item in tree.get_children(''):
+            tree.delete(item)
+        finishedlist = []
+        for buk in Book.all_books.values():
+            if buk.read_status == "Finished":
+                finishedlist.append(buk)
+        for i, buk in enumerate(finishedlist):
+            tree.insert('', 'end', text=f'{i+1}.', values=(buk.title, buk.author))
+        tree.tag_configure("greyed", background='grey50')
+        item_ids = tree.get_children()
+        for j in range(0, len(item_ids), 2):
+            tree.item(item_ids[j], tags=("greyed"))
+    
 
     def create_menubar(self):
         if self._root is not None:
@@ -82,14 +265,15 @@ class Library():
             books = Menu(menubar)
             manage = Menu(menubar)
             switch = Menu(manage)
-            menubar.add_cascade(menu=books, label='Books')
-            menubar.add_cascade(menu=manage, label='Manage')
-            books.add_command(label='New Book', command = lambda: self.menubar_create_book())
-            books.add_command(label='Edit or Delete Book', command= lambda: self.menubar_edit_book()) #comment: add command here to edit/delete books
-            manage.add_command(label='Manage Books and Libraries', command = lambda: self.menubar_manage())
-            manage.add_cascade(menu=switch, label='Switch Libraries')
+            menubar.add_cascade(menu=books, label='Books', font='TkMenuFont')
+            menubar.add_cascade(menu=manage, label='Manage', font='TkMenuFont')
+            books.add_command(label='New Book', command = lambda: self.menubar_create_book(), font='TkMenuFont')
+            books.add_command(label='Edit or Delete Book', command= lambda: self.menubar_edit_book(), font='TkMenuFont')
+            manage.add_command(label='Manage Books and Libraries', command = lambda: self.menubar_manage(), font='TkMenuFont')
+            manage.add_cascade(menu=switch, label='Switch Libraries', font='TkMenuFont')
+            manage.add_command(label='Rename Library', command = lambda: self.menubar_rename_libr(), font='TkMenuFont')
             for librname in Library.all_libraries:
-                switch.add_command(label=f'{librname}', command = lambda name=librname: self.menubar_switch_libr(name))
+                switch.add_command(label=f'{librname}', command = lambda name=librname: self.menubar_switch_libr(name), font='TkMenuFont')
 
     def menubar_manage(self):
         window = Toplevel(self._root)
@@ -107,9 +291,10 @@ class Library():
         tree.heading('Author', text='Author')
         tree.heading('Status', text='Status')
         tree.heading('Tags', text='Tags')
-        tree.column('Author', anchor='center')
-        tree.column('Status', anchor='center')
-        tree.column('Tags', anchor='center')
+        tree.column('#0', width=400)
+        tree.column('Author', width=300)
+        tree.column('Status', anchor='center', width=120)
+        tree.column('Tags', anchor='center', width=300)
         s = ttk.Scrollbar(tree, orient=VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=s.set)
 
@@ -120,7 +305,7 @@ class Library():
         addlib = ttk.Button(windowframe, text='Add library', padding='6 6 6 6', command = lambda: self.treehelper_add_libr(tree))
         dellib = ttk.Button(windowframe, text='Delete Library', padding='6 6 6 6', command = lambda: self.treehelper_del_libr(tree, windowframe))
         addbook = ttk.Button(windowframe, text='Add Book To ...', padding='6 6 6 6', command= lambda: self.treehelper_add_book(tree, window))
-        rembook = ttk.Button(windowframe, text='Remove Book From...', padding='6 6 6 6', command = lambda: self.treehelper_remove_book(tree, window))
+        rembook = ttk.Button(windowframe, text='Remove Book', padding='6 6 6 6', command = lambda: self.treehelper_remove_book(tree, window))
 
         windowframe.grid(row=0, column=0, sticky='nsew')
         window.rowconfigure(0, weight=1)
@@ -149,15 +334,18 @@ class Library():
         namebox = Toplevel(self.frame)
         namebox.title("Library Creation")
         namebox.attributes("-topmost", 1)
+        namebox.geometry("400x150+0+0")
         namebox.resizable(FALSE, FALSE)
         label1 = ttk.Label(namebox, text="Name your library", padding='3 3 3 3', anchor='center')
         librname = StringVar()
-        entry1 = ttk.Entry(namebox, textvariable=librname, width=10)
+        entry1 = ttk.Entry(namebox, textvariable=librname, width=10, justify="center")
         entry1.focus()
         namebox.bind('<Return>', lambda x: self._treehelper_create_libr(namebox, entry1.get(), tree))
 
-        label1.grid()
-        entry1.grid()
+        label1.grid(sticky='nsew')
+        entry1.grid(sticky='nsew')
+        namebox.rowconfigure([0, 1], weight=1)
+        namebox.columnconfigure(0, weight=1)
 
     def _treehelper_create_libr(self, window, librname, tree):
         if not librname:
@@ -209,7 +397,7 @@ class Library():
             addlocation.attributes("-topmost", 1)
             addlocation.resizable(FALSE, FALSE)
             label1 = ttk.Label(addlocation, text="Choose a library to add your book.", padding='3 3 3 3', anchor='center')
-            frame1 = ttk.Frame(addlocation, relief='sunken', borderwidth=5, padding='18 18 18 18')
+            frame1 = ttk.Frame(addlocation, relief='ridge', borderwidth=5, padding='18 18 18 18')
             label1.grid(column=0, row=0, columnspan=2, sticky='nws')
             frame1.grid(column=0, row=1, columnspan=2, sticky='nsew')
             
@@ -222,14 +410,14 @@ class Library():
                 boolvar = BooleanVar(value=(True if tree_item_name in booknames else False))
                 self.libr_bool.append(boolvar)
                 librtoggle = ttk.Checkbutton(frame1, text=f'{librname}', variable=boolvar, onvalue=True, offvalue=False, style="Bigfont.TCheckbutton")
-                librtoggle.grid(column=0, row=2+i, columnspan=2, sticky='nsew')
+                librtoggle.grid(column=0, row=i, sticky='nsew')
                 i += 1
             
             savebutton = ttk.Button(addlocation, text="Save", padding='3 3 3 3', command = lambda: self._treehelper_save_book(tree, tree_item_name, addlocation, frame1))
             cancelbutton = ttk.Button(addlocation, text="Cancel", padding='3 3 3 3', command = addlocation.destroy)
 
-            savebutton.grid(column=0, row=i, sticky='wnes')
-            cancelbutton.grid(column=1, row=i, sticky='wnes')
+            savebutton.grid(column=0, row=2, sticky='wnes')
+            cancelbutton.grid(column=1, row=2, sticky='wnes')
 
     def treehelper_remove_book(self, tree, window):
         selection = tree.selection()
@@ -451,6 +639,37 @@ class Library():
         treeframe.rowconfigure(0, weight=1)
         treeframe.columnconfigure(0, weight=1)
         
+
+    def menubar_rename_libr(self):
+        namebox = Toplevel(self.frame)
+        namebox.title("Rename Library")
+        namebox.attributes("-topmost", 1)
+        namebox.geometry("400x150+0+0")
+        namebox.resizable(FALSE, FALSE)
+        label1 = ttk.Label(namebox, text="Rename your library", padding='3 3 3 3', anchor='center')
+        librnamevar = StringVar()
+        entry1 = ttk.Entry(namebox, textvariable=librnamevar, width=10, justify='center')
+        entry1.insert(0, self.name)
+        namebox.bind('<Return>', lambda x: self._menubar_rename_libr(namebox, librnamevar.get()))
+        entry1.focus()
+
+        label1.grid(sticky='nsew')
+        entry1.grid(sticky='nsew')
+        namebox.rowconfigure([0, 1], weight=1)
+        namebox.columnconfigure(0, weight=1)
+
+    def _menubar_rename_libr(self, namebox, newname):
+        if not newname:
+            messagebox.showinfo(message='Please enter a name', parent=namebox)
+        elif newname in Library.all_libraries:
+            messagebox.showinfo(message='Library name already in use', parent=namebox)
+        else:
+            oldname = self.name
+            self.rename(newname)
+            self.load_GUI(self._root)
+            print(f'Renamed {oldname} to {newname}')
+            namebox.destroy()
+     
 
 
     def _save_book_creation(self, window, title, author, tags, status, notes):

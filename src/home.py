@@ -124,15 +124,18 @@ class Home():
         namebox = Toplevel(self.frame)
         namebox.title("Library Creation")
         namebox.attributes("-topmost", 1)
+        namebox.geometry("400x150+0+0")
         namebox.resizable(FALSE, FALSE)
         label1 = ttk.Label(namebox, text="Name your library", padding='3 3 3 3', anchor='center')
         librname = StringVar()
-        entry1 = ttk.Entry(namebox, textvariable=librname, width=10)
+        entry1 = ttk.Entry(namebox, textvariable=librname, width=10, justify='center')
         entry1.focus()
         namebox.bind('<Return>', lambda x: self._treehelper_create_libr(namebox, entry1.get(), tree))
 
-        label1.grid()
-        entry1.grid()
+        label1.grid(sticky='nsew')
+        entry1.grid(sticky='nsew')
+        namebox.rowconfigure([0, 1], weight=1)
+        namebox.columnconfigure(0, weight=1)
 
     def _treehelper_create_libr(self, window, librname, tree):
         if not librname:
