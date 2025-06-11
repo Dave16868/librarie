@@ -9,9 +9,10 @@ I originally intended to build a library that collected info about the books sto
 
 How to install:
 1. Go to the "Dist" folder and download the Linux/Windows executable, depending on your OS. (.exe is for Windows)
-2. Run it.
-3. Load from a save file or close the dialog box to start a fresh library. 
-4. When you exit, the library will prompt you to save a JSON file, from which you can load your library next time.
+2. If you're on Linux, type "chmod +x path/to/your/executable". For example: if librarie is in "~/Downloads/", move to that directory in your terminal and run "chmod +x librarie" . In Windows, Windows Defender will show up. Simply click "more info" and then "Run anyway"
+3. Run it.
+4. Load from a save file or close the dialog box to start a fresh library. 
+5. When you exit, the library will prompt you to save a JSON file, from which you can load your library next time.
 
 How to use:
 Home page: After loading a file (or not), you may create, delete, or load your libraries. Think of them as save files in a video games. You may assign different sets of books to each library, but you would probably stick to 1 most of the time.
@@ -21,7 +22,7 @@ Menubar - Manage Tab: Manage your books and libraries. All the books created are
 Save - Simply close the program, a prompt will ask you to save.
 
 Note:
-I used PyInstaller to make the executable for both Linux and Windows. For some reason, the windows executable takes ages to load, but it does load. Both programs may say that its dangerous to run them due to the creator being unidentified (That is expected).
+I used PyInstaller to make the executable for both Linux and Windows. For some reason, the windows executable **may** takes ages to load, but it does load. Both programs may say that its dangerous to run them due to the creator being unidentified (That is expected).
 
 Features in the future, perhaps:
 - Open Library API Integration
