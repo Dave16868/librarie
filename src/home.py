@@ -8,11 +8,9 @@ from library import Library
 from book import Book
 
 class Home():
-    def __init__(self, root):
-        self._root = root
+    def __init__(self, width=1920, height=1080):
+        self._root = Tk()
         self._root.title("librarie")
-        width = 1920
-        height = 1080
         self._root.geometry(f'{width}x{height}+0+0')
         self._root.minsize(1280, 720)
         self._root.protocol("WM_DELETE_WINDOW", self.quit_save)
@@ -76,8 +74,8 @@ class Home():
         tree.column('Library', width=400, anchor='center')
         tree.column('# of Books', width=200, anchor='center')
 
-        s = ttk.Scrollbar(tree, orient=VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=s.set)
+        tree_scroll = ttk.Scrollbar(treeframe, orient=VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=tree_scroll.set)
 
         self.treeview_generate(tree)
 
@@ -87,6 +85,7 @@ class Home():
 
         self.frame.grid(row=0, column=0, sticky='snew')
         tree.grid(row=0, column=0, sticky='snew')
+        tree_scroll.grid(row=0, column=1, sticky='nsew')
         treeframe.grid(column=0, row=1, columnspan=2, sticky='snew')
         label1.grid(row=0, column=0, columnspan=2, sticky='nsew')
         addlibr.grid(column=0, row=2, sticky="snew")
@@ -190,4 +189,3 @@ class Home():
         for j in range(0, len(item_ids), 2):
             tree.item(item_ids[j], tags=("greyed"))
 
-Home(Tk())

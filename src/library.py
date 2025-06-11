@@ -427,8 +427,8 @@ class Library():
         tree.column('Author', width=300)
         tree.column('Status', anchor='center', width=120)
         tree.column('Tags', anchor='center', width=300)
-        s = ttk.Scrollbar(tree, orient=VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=s.set)
+        tree_scroll = ttk.Scrollbar(treeframe, orient=VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=tree_scroll.set)
 
         tree.tag_configure('library', background='grey50')
 
@@ -446,6 +446,7 @@ class Library():
         label1.grid(row=0, column=0, sticky='w')
         treeframe.grid(row=1, column=0, columnspan=4, sticky='snew')
         tree.grid(row=0, column=0, sticky='nsew')
+        tree_scroll.grid(row=0, column=1, sticky='snew')
         addlib.grid(row=2, column=0, sticky='nsew')
         dellib.grid(row=2, column=1, sticky='nsew')
         addbook.grid(row=2, column=2, sticky='nsew')
@@ -748,8 +749,8 @@ class Library():
         tree.column('Status', anchor='center', width=120)
         tree.column('Tags', anchor='center', width=300)
         
-        s = ttk.Scrollbar(tree, orient=VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=s.set)
+        tree_scroll = ttk.Scrollbar(treeframe, orient=VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=tree_scroll.set)
 
         self.treehelper_generate_editbook(tree)
 
@@ -764,6 +765,7 @@ class Library():
         label1.grid(row=0, column=0, columnspan=3, sticky='snew')
         treeframe.grid(row=1, column=0, columnspan=3, sticky='snew')
         tree.grid(row=0, column=0, sticky='snew')
+        tree_scroll.grid(row=0, column=1, sticky='snew')
         editbutton.grid(row=2, column=0, sticky='snew')
         deletebutton.grid(row=2, column=1, sticky='snew')
         donebutton.grid(row=2, column=2, sticky='snew')
