@@ -8,7 +8,7 @@ I learned about creating functionality side by side with Tkinter, developed a be
 I originally intended to build a library that collected info about the books stored in them, and would output statistics about your reading habits, such as how much you spent on books over time, an overview of the genres you were into (bar charts would have been involved). But due to a mixture of confusion about my priorities and incompetence as someone who has a whopping track record of 4 months of coding, I settled on a simple library GUI app that kept track of the books you were reading, wanting to read, or have finished. It took me a whole month to make as I had to constantly learn about new concepts and topics that I wouldn't otherwise have gotten around to. Though to be honest, at this point, I just want to be done with it and move on to the next part of the course.
 
 How to install:
-1. Go to the "Dist" folder and download the Linux/Windows executable, depending on your OS.
+1. Go to the "Dist" folder and download the Linux/Windows executable, depending on your OS. (.exe is for Windows)
 2. Run it.
 3. Load from a save file or close the dialog box to start a fresh library. 
 4. When you exit, the library will prompt you to save a JSON file, from which you can load your library next time.
